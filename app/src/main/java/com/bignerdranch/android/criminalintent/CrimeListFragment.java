@@ -10,6 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.List;
 
@@ -39,15 +40,16 @@ public class CrimeListFragment extends Fragment {
         mCrimeRecyclerView.setAdapter(mAdapter);
     }
 
-    private class CrimeHolder extends RecyclerView.ViewHolder {
+    private abstract class AbstractCrimeHolder extends RecyclerView.ViewHolder
+            implements View.OnClickListener {
 
         private Crime mCrime;
         private TextView mTitleTextView;
         private TextView mDateTextView;
 
-        public CrimeHolder(LayoutInflater inflater, ViewGroup parent) {
-            super(inflater.inflate(R.layout.list_item_crime,parent,false));
-
+        public AbstractCrimeHolder(LayoutInflater inflater, ViewGroup parent, int layoutId) {
+            super(inflater.inflate(layoutId, parent,false));
+            itemView.setOnClickListener(this);
             mTitleTextView = (TextView) itemView.findViewById(R.id.crime_title);
             mDateTextView = (TextView) itemView.findViewById(R.id.crime_date);
         }
@@ -57,30 +59,71 @@ public class CrimeListFragment extends Fragment {
             mTitleTextView.setText(mCrime.getmTitle());
             mDateTextView.setText(mCrime.getmDate().toString());
         }
+
+        @Override
+        public void onClick(View v) {
+            Toast.makeText(getActivity(),mCrime.getmTitle() + " clicked!", Toast.LENGTH_SHORT).show();
+        }
     }
 
-    private class CrimeAdapter extends RecyclerView.Adapter<CrimeHolder> {
+    private class CrimeHolder extends AbstractCrimeHolder {
+        public CrimeHolder(LayoutInflater inflater, ViewGroup parent) {
+            super(inflater, parent, R.layout.list_item_crime);
+        }
+    }
+
+    private class PoliceCrimeHolder extends AbstractCrimeHolder {
+        public PoliceCrimeHolder(LayoutInflater inflater, ViewGroup parent) {
+            super(inflater, parent, R.layout.list_item_crime_police);
+        }
+    }
+    private class CrimeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         private List<Crime> mCrimes;
+        private static final int LIST_ITEM_CRIME = 0;
+        private static final int LIST_ITEM_CRIME_POLICE = 1;
 
         public CrimeAdapter(List<Crime> crimes) {
             mCrimes = crimes;
         }
 
         @Override
-        public CrimeHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+
             LayoutInflater layoutInflater = LayoutInflater.from(getActivity());
-            return new CrimeHolder(layoutInflater,parent);
+            if (viewType == LIST_ITEM_CRIME) {
+                return new CrimeHolder(layoutInflater, parent);
+            } else if (viewType == LIST_ITEM_CRIME_POLICE) {
+                return new PoliceCrimeHolder(layoutInflater, parent);
+            } else {
+                return null;
+            }
         }
 
         @Override
-        public void onBindViewHolder(CrimeHolder holder, int position) {
-            Crime crime = mCrimes.get(position);
-            holder.bind(crime);
+        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+            Crime mCrime = mCrimes.get(position);
+            if (holder instanceof CrimeHolder) {
+                ((CrimeHolder) holder).bind(mCrime);
+            }
+            if (holder instanceof PoliceCrimeHolder) {
+                ((PoliceCrimeHolder) holder).bind(mCrime);
+            }
         }
 
         @Override
         public int getItemCount() {
             return mCrimes.size();
         }
+
+        @Override
+        public int getItemViewType (int position) {
+            boolean requiresPolice = mCrimes.get(position).ismRequiresPolice();
+            if (requiresPolice) {
+                return LIST_ITEM_CRIME_POLICE;
+            } else {
+                return LIST_ITEM_CRIME;
+            }
+        }
+
     }
 }
