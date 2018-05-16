@@ -7,6 +7,8 @@ import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -19,6 +21,20 @@ public class CrimeListFragment extends Fragment {
 
     private RecyclerView mCrimeRecyclerView;
     private CrimeAdapter mAdapter;
+    private int mLastModified = -1;
+
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        inflater.inflate(R.menu.fragment_crime_list,menu);
+    }
 
     @Nullable
     @Override
@@ -33,12 +49,28 @@ public class CrimeListFragment extends Fragment {
         return view;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateUI();
+    }
+
     private void updateUI() {
         CrimeLab crimeLab = CrimeLab.get(getActivity());
         List<Crime> crimes = crimeLab.getCrimes();
 
-        mAdapter = new CrimeAdapter(crimes);
-        mCrimeRecyclerView.setAdapter(mAdapter);
+        if (mAdapter == null) {
+            mAdapter = new CrimeAdapter(crimes);
+            mCrimeRecyclerView.setAdapter(mAdapter);
+        } else {
+            // mAdapter.notifyDataSetChanged();
+            if (mLastModified > -1) {
+                mAdapter.notifyItemChanged(mLastModified);
+                mLastModified = -1;
+            } else {
+                mAdapter.notifyDataSetChanged();
+            }
+        }
     }
 
     private abstract class AbstractCrimeHolder extends RecyclerView.ViewHolder
@@ -59,6 +91,7 @@ public class CrimeListFragment extends Fragment {
 
         public void bind(Crime crime) {
             mCrime = crime;
+
             mTitleTextView.setText(mCrime.getmTitle());
             mDateTextView.setText(mCrime.getmDate().toString());
             if (mSolvedImageView != null) {
@@ -68,7 +101,8 @@ public class CrimeListFragment extends Fragment {
 
         @Override
         public void onClick(View v) {
-            Intent intent = CrimeActivity.newIntent(getActivity(),mCrime.getmId());
+            mLastModified = this.getAdapterPosition();
+            Intent intent = CrimePagerActivity.newIntent(getActivity(), mCrime.getmId());
             startActivity(intent);
         }
     }
@@ -103,7 +137,7 @@ public class CrimeListFragment extends Fragment {
             } else if (viewType == LIST_ITEM_CRIME_POLICE) {
                 return new PoliceCrimeHolder(layoutInflater, parent);
             } else {
-                return null;
+               return null;
             }
         }
 
