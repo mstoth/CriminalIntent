@@ -1,14 +1,15 @@
 package com.bignerdranch.android.criminalintent;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.Layout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -46,23 +47,29 @@ public class CrimeListFragment extends Fragment {
         private Crime mCrime;
         private TextView mTitleTextView;
         private TextView mDateTextView;
+        private ImageView mSolvedImageView;
 
         public AbstractCrimeHolder(LayoutInflater inflater, ViewGroup parent, int layoutId) {
             super(inflater.inflate(layoutId, parent,false));
             itemView.setOnClickListener(this);
             mTitleTextView = (TextView) itemView.findViewById(R.id.crime_title);
             mDateTextView = (TextView) itemView.findViewById(R.id.crime_date);
+            mSolvedImageView = (ImageView) itemView.findViewById(R.id.crime_solved);
         }
 
         public void bind(Crime crime) {
             mCrime = crime;
             mTitleTextView.setText(mCrime.getmTitle());
             mDateTextView.setText(mCrime.getmDate().toString());
+            if (mSolvedImageView != null) {
+                mSolvedImageView.setVisibility(crime.ismSolved() ? View.VISIBLE : View.GONE);
+            }
         }
 
         @Override
         public void onClick(View v) {
-            Toast.makeText(getActivity(),mCrime.getmTitle() + " clicked!", Toast.LENGTH_SHORT).show();
+            Intent intent = CrimeActivity.newIntent(getActivity(),mCrime.getmId());
+            startActivity(intent);
         }
     }
 
@@ -90,6 +97,7 @@ public class CrimeListFragment extends Fragment {
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
 
             LayoutInflater layoutInflater = LayoutInflater.from(getActivity());
+
             if (viewType == LIST_ITEM_CRIME) {
                 return new CrimeHolder(layoutInflater, parent);
             } else if (viewType == LIST_ITEM_CRIME_POLICE) {
